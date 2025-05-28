@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Pet {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  meals       Int
+  water       Float
+  humidity    Float
+  temperature Float  
+  activity    Float
+  recordedAt  DateTime 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  timestamp DateTime @default(now())
+  isRead    Boolean  @default(false)
+}
+
+// prisma/schema.prisma
+model PushSubscription {
+  id             Int       @id @default(autoincrement())
+  endpoint       String    @unique
+  keys           Json
+  expirationTime DateTime? // ¡AÑADE ESTA LÍNEA! Es opcional (?), por si viene null
+  createdAt      DateTime  @default(now())
+}
+
+
