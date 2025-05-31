@@ -14,7 +14,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
-        <ServiceWorkerRegister /> {/* Componente para registrar el Service Worker */}
         <div className="flex flex-col min-h-screen">
           <main className="flex-grow container mx-auto px-4 py-8 pb-20">
             {children}

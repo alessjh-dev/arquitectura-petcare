@@ -12,11 +12,11 @@ datasource db {
 model Pet {
   id          String    @id @default(cuid())
   name        String    @unique
-  photo       Bytes?    // Almacenará la imagen como Bytes (BYTEA en PostgreSQL)
-  birthDate   DateTime? // <-- NUEVO: Fecha de nacimiento
-  weight      Float?    // <-- NUEVO: Peso en kg o lbs
-  breed       String?   // <-- NUEVO: Raza de la mascota
-  recordedAt  DateTime  // Última vez que se registró CUALQUIER dato de la mascota (por /api/activity)
+  photo       Bytes?
+  birthDate   DateTime?
+  weight      Float?
+  breed       String?
+  recordedAt  DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -39,10 +39,11 @@ model Notification {
   isRead    Boolean  @default(false)
 }
 
-model PushSubscription {
-  id             Int       @id @default(autoincrement())
-  endpoint       String    @unique
-  keys           Json
-  expirationTime DateTime?
-  createdAt      DateTime  @default(now())
-}
+// ELIMINAMOS EL MODELO PushSubscription
+// model PushSubscription {
+//   id             Int       @id @default(autoincrement())
+//   endpoint       String    @unique
+//   keys           Json
+//   expirationTime DateTime?
+//   createdAt      DateTime  @default(now())
+// }

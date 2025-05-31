@@ -3,14 +3,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NotificationItem, { NotificationItemProps } from '@/components/notifications/NotificationItem';
 import { Button } from '@/components/ui/Button';
-import { Bell, Loader2 } from 'lucide-react'; // Importamos Loader2 para un spinner
+import { Bell, Loader2, Info, CheckCircle, AlertTriangle } from 'lucide-react'; // Añadimos más iconos
+
+// Nuevo: Tipo para el banner de notificación temporal
+interface TemporaryBannerNotification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+}
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItemProps[]>([]);
-  // 'initialLoad' se usa para el primer renderizado, y 'isUpdating' para las actualizaciones de polling.
   const [initialLoad, setInitialLoad] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false); // Nuevo estado para indicar si se está actualizando por polling
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [temporaryBanner, setTemporaryBanner] = useState<TemporaryBannerNotification | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     // Si no es la carga inicial, mostramos un spinner más discreto
@@ -24,6 +31,37 @@ export default function NotificationsPage() {
         throw new Error('Error al cargar notificaciones');
       }
       const data: NotificationItemProps[] = await res.json();
+
+      // Detectar nuevas notificaciones para el banner temporal
+      const newNotifications = data.filter(
+        (newNotif) => !notifications.some((existingNotif) => existingNotif.id === newNotif.id)
+      );
+
+      // Si hay nuevas notificaciones y no es la carga inicial
+      if (newNotifications.length > 0 && !initialLoad) {
+        // Tomar la primera nueva notificación y mostrarla en el banner
+        const latestNew = newNotifications[0];
+        let bannerType: 'info' | 'success' | 'warning' | 'error' = 'info';
+        switch (latestNew.type) {
+          case 'activity':
+            bannerType = 'success'; // Actividad es positiva
+            break;
+          case 'alert':
+            bannerType = 'warning'; // Alertas son advertencias
+            break;
+          // Puedes añadir más casos según tus NotificationType
+          default:
+            bannerType = 'info';
+        }
+        setTemporaryBanner({
+          id: latestNew.id,
+          type: bannerType,
+          message: latestNew.message,
+        });
+        // Desaparecer el banner después de unos segundos
+        setTimeout(() => setTemporaryBanner(null), 5000);
+      }
+
       const formattedData = data.map(notif => ({
         ...notif,
         timestamp: new Date(notif.timestamp).toLocaleString(),
@@ -33,15 +71,15 @@ export default function NotificationsPage() {
       setError(err.message);
       console.error('Error fetching notifications:', err);
     } finally {
-      setInitialLoad(false); // La carga inicial ha terminado
-      setIsUpdating(false); // La actualización ha terminado
+      setInitialLoad(false);
+      setIsUpdating(false);
     }
-  }, [initialLoad]); // Dependencia initialLoad para controlar el flujo
+  }, [initialLoad, notifications]); // Añadimos 'notifications' a las dependencias para detectar nuevas
 
   useEffect(() => {
-    fetchNotifications(); // Carga inicial al montar
+    fetchNotifications();
     const interval = setInterval(fetchNotifications, 3000); // Polling cada 3 segundos
-    return () => clearInterval(interval); // Limpia el intervalo al desmontar
+    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   const handleNotificationClick = async (id: string) => {
@@ -75,7 +113,7 @@ export default function NotificationsPage() {
           body: JSON.stringify({ ids: unreadNotificationIds, isRead: true }),
         });
         if (!res.ok) throw new Error('Error al marcar todas como leídas');
-        fetchNotifications(); // Refresca las notificaciones después de marcar
+        fetchNotifications();
       }
     } catch (err) {
       console.error('Error al marcar todas como leídas:', err);
@@ -98,18 +136,45 @@ export default function NotificationsPage() {
     }
   };
 
-  // Mostrar un mensaje de carga inicial solo al principio
+  // Helper para el icono del banner
+  const getBannerIcon = (type: TemporaryBannerNotification['type']) => {
+    switch (type) {
+      case 'success': return <CheckCircle size={20} className="mr-2" />;
+      case 'warning': return <AlertTriangle size={20} className="mr-2" />;
+      case 'error': return <AlertTriangle size={20} className="mr-2" />; // O un icono de error diferente
+      default: return <Info size={20} className="mr-2" />;
+    }
+  };
+
+  // Helper para el color del banner
+  const getBannerColorClass = (type: TemporaryBannerNotification['type']) => {
+    switch (type) {
+      case 'success': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'warning': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'error': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    }
+  };
+
+
   if (initialLoad) {
     return <p className="text-center py-10">Cargando notificaciones...</p>;
   }
 
-  // Mostrar error si lo hay
   if (error) {
     return <p className="text-center py-10 text-red-500">Error: {error}</p>;
   }
 
   return (
     <div className="container mx-auto p-4 pb-20">
+      {/* Banner de notificación temporal */}
+      {temporaryBanner && (
+        <div className={`fixed top-16 left-1/2 -translate-x-1/2 w-11/12 max-w-sm p-3 rounded-lg shadow-lg flex items-center z-50 transition-all duration-300 ${getBannerColorClass(temporaryBanner.type)}`}>
+          {getBannerIcon(temporaryBanner.type)}
+          <p className="text-sm font-medium">{temporaryBanner.message}</p>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center mb-6">
         <h1 className="text-2xl font-bold mr-4 mb-3">Notificaciones</h1>
         {notifications.some(n => !n.isRead) && (
@@ -117,7 +182,6 @@ export default function NotificationsPage() {
             Marcar todas como leídas
           </Button>
         )}
-        {/* Indicador de actualización sutil */}
         {isUpdating && (
           <Loader2 className="animate-spin text-muted-foreground ml-4 mb-3" size={20} />
         )}

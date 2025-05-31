@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendNotification } from '@/lib/push';
 
 export async function POST(req: Request) {
   try {
@@ -50,7 +49,6 @@ export async function POST(req: Request) {
     if (activityNotification) {
       const subscriptions = await prisma.pushSubscription.findMany();
       const payload = JSON.stringify({ title: activityNotification.title, body: activityNotification.message });
-      await Promise.all(subscriptions.map((sub: any) => sendNotification(sub, payload)));
     }
 
     return NextResponse.json({ message: "Actividad registrada", event: activityEvent, petName: pet.name });
