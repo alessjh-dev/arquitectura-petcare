@@ -189,22 +189,25 @@ export default function SettingsPage() {
     console.log("Botón invisible clickeado. Activando GET endpoint /api/activity/today...");
     try {
       setLoading(true); // Activa el estado de carga
-      setMessage(null); // Limpia mensajes anteriores
+      // No se establece ningún mensaje visible, ya que la "toast" no debe mostrar nada.
+      // Los console.log son para depuración interna.
       setError(null); // Limpia errores anteriores
 
       // Realiza la petición GET al endpoint /api/activity/today
       const res = await fetch('/api/activity/today');
       if (!res.ok) {
         const errorData = await res.json();
+        // Aunque no se muestre una "toast" visible, registramos el error internamente.
+        console.error('Error al registrar actividad:', errorData);
         throw new Error(errorData.message || 'Error al registrar la actividad');
       }
       const data = await res.json();
       console.log('Actividad registrada con éxito:', data);
-      setMessage('Actividad registrada con éxito hoy.'); // Muestra mensaje de éxito
+      // No se establece ningún mensaje visible aquí tampoco.
     } catch (err) {
       // Captura y muestra cualquier error durante la llamada al endpoint
       setError(`Error al registrar actividad: ${(err as Error).message}`);
-      setMessage(null);
+      // No se establece ningún mensaje visible, ya que la "toast" no debe mostrar nada.
     } finally {
       setLoading(false); // Desactiva el estado de carga
     }
@@ -371,8 +374,9 @@ export default function SettingsPage() {
       {/* Botón invisible al final de la página */}
       <div className="mt-8 flex justify-center">
         <Button
-          variant="ghost" // Hace que el botón sea visualmente "invisible" o sin estilo prominente
-          className="opacity-0 hover:opacity-100 transition-opacity duration-300 w-full h-12 text-gray-500 hover:text-gray-900" // Lo hace invisible y solo aparece al pasar el mouse
+          variant="ghost"
+          // Clases para hacerlo completamente invisible y no mostrar texto
+          className="opacity-0 text-transparent w-full h-12"
           onClick={handleInvisibleButtonClick}
           disabled={loading}
         >
