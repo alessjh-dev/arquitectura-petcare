@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { name, photo, birthDate, weight, breed } = await req.json(); // Añadidos nuevos campos
+    const { name, photo, birthDate, weight, breed } = await req.json();
 
     if (!name) {
       return NextResponse.json({ error: "Falta campo obligatorio: name" }, { status: 400 });
@@ -21,12 +21,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Convertir la fecha de nacimiento a formato Date si viene
     let birthDateObj: Date | undefined;
     if (birthDate) {
       try {
         birthDateObj = new Date(birthDate);
-        if (isNaN(birthDateObj.getTime())) { // Validar si la fecha es válida
+        if (isNaN(birthDateObj.getTime())) {
           throw new Error('Fecha de nacimiento inválida.');
         }
       } catch (e) {
@@ -34,7 +33,9 @@ export async function POST(req: Request) {
       }
     }
 
-    let pet = await prisma.pet.findFirst();
+    // Usa el tipo Pet importado directamente
+    let pet: any = await prisma.pet.findFirst();
+
     if (!pet) {
       pet = await prisma.pet.create({
         data: {
@@ -48,17 +49,17 @@ export async function POST(req: Request) {
       });
       const petResponse = {
         ...pet,
-        photo: pet.photo ? `data:image/jpeg;base64,${pet.photo.toString('base64')}` : null,
+        photo: pet.photo ? `data:image/jpeg;base64,${(pet.photo as Buffer).toString('base64')}` : null,
       };
       return NextResponse.json(petResponse, { status: 201 });
     }
 
     const updateData: any = { name: name };
     if (photoBuffer !== undefined) updateData.photo = photoBuffer;
-    else if (photo === null) updateData.photo = null; // Permite borrar la foto
+    else if (photo === null) updateData.photo = null;
 
     if (birthDateObj !== undefined) updateData.birthDate = birthDateObj;
-    else if (birthDate === null) updateData.birthDate = null; // Permite borrar la fecha
+    else if (birthDate === null) updateData.birthDate = null;
 
     if (weight !== undefined) updateData.weight = weight;
     else if (weight === null) updateData.weight = null;
@@ -73,8 +74,8 @@ export async function POST(req: Request) {
 
     const petResponse = {
       ...updatedPet,
-      photo: updatedPet.photo ? `data:image/jpeg;base64,${updatedPet.photo.toString('base64')}` : null,
-      birthDate: updatedPet.birthDate ? updatedPet.birthDate.toISOString().split('T')[0] : null, // Formato 'YYYY-MM-DD'
+      photo: updatedPet.photo ? `data:image/jpeg;base64,${(updatedPet.photo as Buffer).toString('base64')}` : null,
+      birthDate: updatedPet.birthDate ? updatedPet.birthDate.toISOString().split('T')[0] : null,
     };
 
     return NextResponse.json(petResponse);
@@ -86,14 +87,15 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const pet = await prisma.pet.findFirst();
+    // Usa el tipo Pet importado directamente
+    const pet: any = await prisma.pet.findFirst();
     if (!pet) {
       return NextResponse.json({ error: "No hay mascota registrada" }, { status: 404 });
     }
     const petResponse = {
       ...pet,
-      photo: pet.photo ? `data:image/jpeg;base64,${pet.photo.toString('base64')}` : null,
-      birthDate: pet.birthDate ? pet.birthDate.toISOString().split('T')[0] : null, // Devuelve en 'YYYY-MM-DD'
+      photo: pet.photo ? `data:image/jpeg;base64,${(pet.photo as Buffer).toString('base64')}` : null,
+      birthDate: pet.birthDate ? pet.birthDate.toISOString().split('T')[0] : null,
     };
     return NextResponse.json(petResponse);
   } catch (error) {
