@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const today = new Date();
-    const timestamp = today.toISOString(); 
-
-    const petId = 'some_default_pet_id'; 
-    const activityType = 'movement'; 
+    const now = new Date();
+    const recordedAt = now.toISOString(); 
 
     const postBody = {
-      petId: petId,
-      timestamp: timestamp,
-      activityType: activityType,
+      isActivityDetected: true,
+      recordedAt: recordedAt,
     };
 
-    const response = await fetch('/api/activity', {
+    const baseUrl = process.env.BASE_URL;
+
+    if (!baseUrl) {
+      return NextResponse.json(
+        { message: 'Error de configuración: BASE_URL no definida en las variables de entorno.' },
+        { status: 500 }
+      );
+    }
+
+    const response = await fetch(`${baseUrl}/api/activity`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Error al llamar al servicio POST:', errorData);
+      console.error('Error al llamar al servicio POST /api/activity:', errorData);
       return NextResponse.json(
         { message: 'Error al registrar la actividad', error: errorData },
         { status: response.status }
