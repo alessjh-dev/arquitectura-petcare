@@ -1,10 +1,6 @@
 // src/app/api/activity/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { toZonedTime } from 'date-fns-tz'; // Instala esto: npm install date-fns-tz
-
-// Instala date-fns-tz: npm install date-fns-tz
-
 export async function POST(req: Request) {
   try {
     const { isActivityDetected, recordedAt } = await req.json();
@@ -22,29 +18,20 @@ export async function POST(req: Request) {
     let activityNotificationMessage: string | null = null;
 
     if (isActivityDetected === true) {
-      // Convertir recordedAt a un objeto Date
-      const recordDate = new Date(recordedAt);
-
-      // Si recordedAt viene como fecha local desde el ESP32, es mejor convertirla a UTC explícitamente
-      // Si el ESP32 ya envía una ISO string (ej. "2025-05-30T20:00:00Z"), ya es UTC y no se necesita conversión
-      // Si no estás seguro, la forma más segura es siempre tratarla como UTC al guardar
-      const timestampForDb = recordDate.toISOString(); // Almacenar siempre como ISO string (UTC)
+      const eventTimestamp = new Date(recordedAt); // Esto ya debería ser un objeto Date en UTC si el payload es ISO string
 
       // 1. Crear un nuevo evento de actividad en la base de datos
       activityEvent = await prisma.activityEvent.create({
         data: {
           petId: pet.id,
-          timestamp: new Date(timestampForDb), // Aseguramos que se guarda como UTC
+          timestamp: eventTimestamp, // Guardar directamente el objeto Date (Prisma lo maneja como timestamptz UTC)
           activityType: 'movement',
         },
       });
 
       // 2. Preparar la notificación, usando la hora local para la visualización del usuario
-      // Asume tu zona horaria local, por ejemplo 'America/Guatemala'
-      const userTimezone = 'America/Guatemala'; // ¡AJUSTA ESTO A TU ZONA HORARIA REAL!
-      const localizedRecordedAt = toZonedTime(recordDate, userTimezone);
-      const formattedTime = localizedRecordedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
+      // Se formateará con la zona horaria del servidor o del navegador del usuario.
+      const formattedTime = eventTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
       activityNotificationMessage = `¡${pet.name || 'Tu mascota'} ha estado activa! Evento de movimiento detectado a las ${formattedTime}.`;
 
@@ -56,10 +43,10 @@ export async function POST(req: Request) {
         },
       });
 
-      // 4. Actualizar el 'recordedAt' de la mascota, también en UTC
+      // 4. Actualizar el 'recordedAt' de la mascota, también con el timestamp original
       await prisma.pet.update({
         where: { id: pet.id },
-        data: { recordedAt: new Date(timestampForDb) },
+        data: { recordedAt: eventTimestamp },
       });
     }
 
