@@ -1,5 +1,9 @@
 // next.config.js
-const withPWA = require("next-pwa")({
+// Cambiamos require a import
+import withPWAInit from "next-pwa";
+
+// Inicializamos withPWA correctamente para usar con import
+const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
@@ -10,9 +14,10 @@ const withPWA = require("next-pwa")({
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['data:'], // <--- AÑADE ESTA LÍNEA
-    formats: ['image/avif', 'image/webp'], // Puedes mantener esto o ajustarlo
+    domains: ['data:'],
+    formats: ['image/avif', 'image/webp'],
   },
 };
 
-module.exports = withPWA(nextConfig);
+// Cambiamos module.exports a export default
+export default withPWA(nextConfig);
