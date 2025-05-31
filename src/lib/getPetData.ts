@@ -1,3 +1,4 @@
+// src/lib/getPetData.ts
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,6 +7,9 @@ type Pet = {
   id: string;
   name: string;
   photo: string | null;
+  birthDate: string | null; // Fecha de nacimiento en formato string 'YYYY-MM-DD'
+  weight: number | null;
+  breed: string | null;
   recordedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +39,8 @@ export function usePetData() {
   };
 
   useEffect(() => {
-    fetchPet(); 
-  }, []); 
+    fetchPet();
+  }, []);
+
   return { pet, error };
 }

@@ -1,8 +1,9 @@
+// src/components/dashboard/TotalActivityCard.tsx
 'use client';
 
 import React from 'react';
 import Card from '@/components/ui/Card';
-import { Trophy } from 'lucide-react';
+import { Award } from 'lucide-react'; // Cambiado Trophy por Award para un look más limpio
 
 interface TotalActivityCardProps {
   totalEvents: number;
@@ -10,12 +11,15 @@ interface TotalActivityCardProps {
 
 const TotalActivityCard: React.FC<TotalActivityCardProps> = ({ totalEvents }) => {
   return (
-    <Card title="Total de Actividad" className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
-      <div className="flex flex-col items-center justify-center h-full py-4">
-        <Trophy size={48} className="mb-4 text-yellow-300" />
-        <p className="text-sm opacity-90">Eventos de actividad registrados</p>
-        <p className="text-5xl font-bold mt-2">{totalEvents}</p>
-        <p className="text-xs opacity-80 mt-1">¡Un campeón de la diversión!</p>
+    <Card title="Eventos de Actividad Total">
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3">
+          <Award className="text-blue-500" size={36} /> {/* Un color más neutro/claro */}
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Total de Detecciones</span>
+            <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalEvents}</span>
+          </div>
+        </div>
       </div>
     </Card>
   );

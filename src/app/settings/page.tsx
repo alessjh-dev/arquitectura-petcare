@@ -4,17 +4,35 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { Save, Pencil, Camera, Trash2 } from 'lucide-react';
-import Image from 'next/image'; // Importamos Image de next/image para optimización
+import { Save, Pencil, Camera, Trash2, Calendar, Scale, PawPrint } from 'lucide-react'; // Nuevos iconos
+import Image from 'next/image';
+
+// Tipo de la mascota con los nuevos campos
+interface PetData {
+  id?: string; // Puede no tener ID si es nueva
+  name: string;
+  photo: string | null; // Base64 string
+  birthDate: string | null; // 'YYYY-MM-DD'
+  weight: number | null;
+  breed: string | null;
+  recordedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
-  const [petName, setPetName] = useState<string>('');
-  const [petPhoto, setPetPhoto] = useState<string | null>(null); // Base64 string for display
-  const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [petData, setPetData] = useState<PetData>({
+    name: '',
+    photo: null,
+    birthDate: null,
+    weight: null,
+    breed: null,
+  });
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Referencia para el input de archivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -24,17 +42,20 @@ export default function SettingsPage() {
         const res = await fetch('/api/data');
         if (!res.ok) {
           if (res.status === 404) {
-            // No hay mascota, se creará al guardar
-            setPetName('');
-            setPetPhoto(null);
-            setError(null);
+            setError(null); // No es un error, solo que no hay mascota
             return;
           }
           throw new Error('Error al obtener datos de la mascota');
         }
-        const data = await res.json();
-        setPetName(data?.name ?? '');
-        setPetPhoto(data?.photo ?? null); // La foto ya viene en base64 desde la API
+        const data: PetData = await res.json();
+        setPetData({
+          name: data?.name ?? '',
+          photo: data?.photo ?? null,
+          birthDate: data?.birthDate ?? null,
+          weight: data?.weight ?? null,
+          breed: data?.breed ?? null,
+          id: data.id, // Guardar el ID si existe
+        });
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -45,8 +66,14 @@ export default function SettingsPage() {
     fetchPetData();
   }, []);
 
-  const handlePetNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPetName(event.target.value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPetData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPetData(prev => ({ ...prev, [id]: value === '' ? null : parseFloat(value) }));
   };
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,43 +81,60 @@ export default function SettingsPage() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Almacena la cadena base64 para previsualización y envío
-        setPetPhoto(reader.result as string);
+        setPetData(prev => ({ ...prev, photo: reader.result as string }));
       };
-      reader.readAsDataURL(file); // Lee el archivo como una URL de datos (base64)
+      reader.readAsDataURL(file);
     }
   };
 
   const handleRemovePhoto = () => {
-    setPetPhoto(null); // Elimina la foto del estado
+    setPetData(prev => ({ ...prev, photo: null }));
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Limpia el input de archivo
+      fileInputRef.current.value = '';
     }
   };
 
   const handleSaveChanges = async () => {
+    if (!petData.name.trim()) {
+      alert('El nombre de la mascota no puede estar vacío.');
+      return;
+    }
     try {
       setLoading(true);
-      // Extrae solo la parte base64 de la cadena (después de 'data:image/png;base64,')
-      const photoBase64 = petPhoto ? petPhoto.split(',')[1] : null;
+      // La API ya espera la cadena base64 con o sin prefijo, la procesa internamente
+      // `photo` puede ser null, la cadena base64 completa, o la cadena base64 sin prefijo.
+      // La API la limpiará si es necesario.
+      const dataToSend = {
+        name: petData.name,
+        photo: petData.photo,
+        birthDate: petData.birthDate,
+        weight: petData.weight,
+        breed: petData.breed,
+      };
 
       const res = await fetch('/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: petName,
-          photo: photoBase64, // Enviamos la cadena base64 (o null)
-        }),
+        body: JSON.stringify(dataToSend),
       });
 
-      if (!res.ok) throw new Error('Error al guardar datos');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Error al guardar datos');
+      }
 
-      const updatedData = await res.json();
-      setPetName(updatedData.name);
-      setPetPhoto(updatedData.photo); // La API devuelve la foto ya en base64
+      const updatedData: PetData = await res.json();
+      setPetData({
+        name: updatedData.name,
+        photo: updatedData.photo,
+        birthDate: updatedData.birthDate,
+        weight: updatedData.weight,
+        breed: updatedData.breed,
+        id: updatedData.id,
+      });
 
       alert('¡Configuración actualizada correctamente!');
-      setIsEditingName(false); // Sale del modo edición de nombre
+      setIsEditing(false);
     } catch (err) {
       alert(`Error: ${(err as Error).message}`);
     } finally {
@@ -115,13 +159,51 @@ export default function SettingsPage() {
             <p className="text-red-600">Error: {error}</p>
           ) : (
             <div className="space-y-4">
+              {/* Botones de Editar/Guardar */}
+              <div className="flex justify-end gap-2">
+                {!isEditing ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                    className="text-sm"
+                    disabled={loading}
+                  >
+                    <Pencil className="w-4 h-4 mr-1" />
+                    Editar Perfil
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setIsEditing(false);
+                        // Opcional: recargar datos originales si se cancela la edición
+                        // fetchPetData();
+                      }}
+                      disabled={loading}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="lg"
+                      onClick={handleSaveChanges}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={loading || !petData.name.trim()}
+                    >
+                      <Save className="mr-2 h-5 w-5" />
+                      Guardar Cambios
+                    </Button>
+                  </>
+                )}
+              </div>
+
               {/* Sección de Foto de la Mascota */}
               <div className="flex flex-col items-center gap-4 p-4 border rounded-lg bg-card">
                 <Label htmlFor="petPhoto" className="text-lg font-medium">Foto de tu Mascota</Label>
                 <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary shadow-lg bg-muted flex items-center justify-center">
-                  {petPhoto ? (
+                  {petData.photo ? (
                     <Image
-                      src={petPhoto}
+                      src={petData.photo}
                       alt="Foto de la Mascota"
                       fill
                       style={{ objectFit: 'cover' }}
@@ -134,62 +216,83 @@ export default function SettingsPage() {
                 <Input
                   id="petPhoto"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png" // Aceptar solo JPG/PNG
                   ref={fileInputRef}
                   onChange={handlePhotoChange}
                   className="w-full max-w-xs cursor-pointer"
-                  disabled={loading}
+                  disabled={loading || !isEditing}
                 />
-                {petPhoto && (
+                {petData.photo && (
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={handleRemovePhoto}
                     className="mt-2"
-                    disabled={loading}
+                    disabled={loading || !isEditing}
                   >
                     <Trash2 className="w-4 h-4 mr-2" /> Eliminar Foto
                   </Button>
                 )}
               </div>
 
-              {/* Sección de Nombre de la Mascota */}
-              <div className="space-y-1.5 p-4 border rounded-lg bg-card">
-                <Label htmlFor="petName" className="text-lg font-medium">Nombre de tu Mascota</Label>
-                <div className="flex items-center gap-2">
+              {/* Campos de Información de la Mascota */}
+              <div className="space-y-4 p-4 border rounded-lg bg-card">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="flex items-center gap-2 text-lg font-medium">
+                    <PawPrint size={20} /> Nombre
+                  </Label>
                   <Input
-                    id="petName"
+                    id="name"
                     type="text"
-                    value={petName}
-                    onChange={handlePetNameChange}
-                    disabled={!isEditingName || loading}
-                    className={isEditingName ? 'border-primary' : 'opacity-70 cursor-not-allowed'}
+                    value={petData.name}
+                    onChange={handleInputChange}
+                    disabled={!isEditing || loading}
+                    className={isEditing ? 'border-primary' : 'opacity-70 cursor-not-allowed'}
                   />
-                  {!isEditingName ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsEditingName(true)}
-                      className="text-sm"
-                      disabled={loading}
-                    >
-                      <Pencil className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                  ) : null}
                 </div>
-                {isEditingName && (
-                  <div className="pt-4 flex justify-end">
-                    <Button
-                      size="lg"
-                      onClick={handleSaveChanges}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      disabled={loading}
-                    >
-                      <Save className="mr-2 h-5 w-5" />
-                      Guardar Cambios
-                    </Button>
-                  </div>
-                )}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="birthDate" className="flex items-center gap-2 text-lg font-medium">
+                    <Calendar size={20} /> Fecha de Nacimiento
+                  </Label>
+                  <Input
+                    id="birthDate"
+                    type="date" // Input tipo fecha
+                    value={petData.birthDate || ''}
+                    onChange={handleInputChange}
+                    disabled={!isEditing || loading}
+                    className={isEditing ? 'border-primary' : 'opacity-70 cursor-not-allowed'}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="weight" className="flex items-center gap-2 text-lg font-medium">
+                    <Scale size={20} /> Peso (kg)
+                  </Label>
+                  <Input
+                    id="weight"
+                    type="number" // Input tipo número
+                    step="0.1" // Permite decimales
+                    value={petData.weight ?? ''}
+                    onChange={handleNumberInputChange}
+                    disabled={!isEditing || loading}
+                    className={isEditing ? 'border-primary' : 'opacity-70 cursor-not-allowed'}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="breed" className="flex items-center gap-2 text-lg font-medium">
+                    <PawPrint size={20} /> Raza
+                  </Label>
+                  <Input
+                    id="breed"
+                    type="text"
+                    value={petData.breed ?? ''}
+                    onChange={handleInputChange}
+                    disabled={!isEditing || loading}
+                    className={isEditing ? 'border-primary' : 'opacity-70 cursor-not-allowed'}
+                  />
+                </div>
               </div>
             </div>
           )}
