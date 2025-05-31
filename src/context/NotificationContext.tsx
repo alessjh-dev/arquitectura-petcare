@@ -5,11 +5,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Info, CheckCircle, AlertTriangle } from 'lucide-react'; // Iconos para el banner
 
 // Tipos de datos
-interface NotificationItemProps { // Usamos el mismo tipo que en NotificationItem
+interface NotificationItemProps {
   id: string;
   type: string; // 'activity', 'food', 'water', 'alert', 'info'
   message: string;
-  timestamp: string;
+  timestamp: string; // La fecha viene en formato ISO 8601 (UTC)
   isRead: boolean;
 }
 
@@ -21,8 +21,6 @@ interface TemporaryBannerNotification {
 
 interface NotificationContextType {
   temporaryBanner: TemporaryBannerNotification | null;
-  // Podríamos añadir una función para mostrar el banner manualmente desde cualquier parte
-  // showBanner: (type: 'info' | 'success' | 'warning' | 'error', message: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -31,6 +29,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const [temporaryBanner, setTemporaryBanner] = useState<TemporaryBannerNotification | null>(null);
   const [lastFetchedNotificationId, setLastFetchedNotificationId] = useState<string | null>(null);
   const [pollingActive, setPollingActive] = useState(false);
+
+  // Helper para formatear el timestamp a la hora local del usuario
+  const formatTimestampToLocal = useCallback((timestamp: string) => {
+    const date = new Date(timestamp); // Crea un objeto Date desde el string ISO (UTC)
+    
+    // Opciones para formatear la fecha y hora. Puedes ajustarlas según tus necesidades.
+    // 'es-GT' es un ejemplo para Guatemala. Puedes usar el idioma del navegador ('navigator.language')
+    // o simplemente omitirlo para usar el formato por defecto del usuario.
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true, // Formato AM/PM
+      // timeZoneName: 'short', // Para mostrar "GMT-6" por ejemplo, si es necesario
+    };
+    
+    // Aquí es donde se convierte a la zona horaria local del usuario
+    return date.toLocaleString(undefined, options); // 'undefined' usa el idioma por defecto del usuario
+  }, []);
 
   // Función para obtener las notificaciones de la API (solo las nuevas para el banner)
   const fetchNewNotificationsForBanner = useCallback(async () => {
@@ -52,7 +72,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
               bannerType = 'success';
               break;
             case 'alert':
-            case 'water': // Puedes añadir tus otros tipos de alerta aquí
+            case 'water':
             case 'food':
               bannerType = 'warning';
               break;
@@ -60,10 +80,18 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
               bannerType = 'info';
           }
 
+          // --- MODIFICACIÓN CLAVE AQUÍ ---
+          // Formatea el timestamp antes de añadirlo al mensaje del banner
+          const formattedTime = formatTimestampToLocal(latestDbNotification.timestamp);
+          const bannerMessage = `${latestDbNotification.message} (a las ${formattedTime})`; 
+          // Ajusta el mensaje como mejor te parezca. Aquí lo añadimos al final.
+          // Por ejemplo: `Actividad detectada (a las 30/05/2025, 11:43:22 p. m.)`
+
+
           setTemporaryBanner({
             id: latestDbNotification.id,
             type: bannerType,
-            message: latestDbNotification.message,
+            message: bannerMessage, // Usamos el mensaje con la hora formateada
           });
           setLastFetchedNotificationId(latestDbNotification.id); // Guardar el ID de la última notif. mostrada
           setTimeout(() => setTemporaryBanner(null), 5000); // Quitar el banner después de 5 segundos
@@ -71,13 +99,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       }
     } catch (err) {
       console.error('Error fetching new notifications for banner:', err);
-      // Opcional: mostrar un banner de error si la API falla
     }
-  }, [lastFetchedNotificationId]); // Depende del ID de la última notif. para evitar re-triggers
+  }, [lastFetchedNotificationId, formatTimestampToLocal]); // Asegúrate de incluir formatTimestampToLocal
 
   useEffect(() => {
     // Iniciar polling solo después de una carga inicial
-    // para obtener el ID de la notificación más reciente
     const getInitialLatestNotificationId = async () => {
         try {
             const res = await fetch('/api/notifications');
