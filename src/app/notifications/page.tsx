@@ -3,13 +3,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NotificationItem, { NotificationItemProps } from '@/components/notifications/NotificationItem';
 import { Button } from '@/components/ui/Button';
-import { Bell, Loader2 } from 'lucide-react'; // Quitamos iconos de banner
+import { Bell, Loader2 } from 'lucide-react';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItemProps[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper para formatear el timestamp a la hora local del usuario
+  // Reutilizamos la lógica del NotificationContext
+  const formatTimestampToLocal = useCallback((timestamp: string) => {
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true, // Formato AM/PM
+    };
+    return date.toLocaleString(undefined, options);
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!initialLoad) {
@@ -22,11 +38,12 @@ export default function NotificationsPage() {
         throw new Error('Error al cargar notificaciones');
       }
       const data: NotificationItemProps[] = await res.json();
-      const formattedData = data.map(notif => ({
-        ...notif,
-        timestamp: new Date(notif.timestamp).toLocaleString(),
-      }));
-      setNotifications(formattedData);
+      
+      // --- MODIFICACIÓN CLAVE AQUÍ ---
+      // NO formatees el timestamp aquí. Pásalo tal cual al NotificationItem.
+      // El NotificationItem será responsable de mostrarlo correctamente.
+      setNotifications(data); 
+
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching notifications:', err);
@@ -34,7 +51,7 @@ export default function NotificationsPage() {
       setInitialLoad(false);
       setIsUpdating(false);
     }
-  }, [initialLoad]); // Dependencia initialLoad para controlar el flujo
+  }, [initialLoad]);
 
   useEffect(() => {
     fetchNotifications(); // Carga inicial
@@ -106,8 +123,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="container mx-auto p-4 pb-20">
-      {/* El banner temporal ya NO se renderiza aquí, sino en layout.tsx */}
-
       <div className="flex flex-wrap items-center mb-6">
         <h1 className="text-2xl font-bold mr-4 mb-3">Notificaciones</h1>
         {notifications.some(n => !n.isRead) && (
@@ -131,7 +146,13 @@ export default function NotificationsPage() {
           {notifications.map(notification => (
             <NotificationItem
               key={notification.id}
-              {...notification}
+              // --- MODIFICACIÓN CLAVE AQUÍ ---
+              // Pasa el `timestamp` original. El NotificationItem se encargará del formateo.
+              {...notification} 
+              // Si NotificationItem espera un timestamp ya formateado,
+              // entonces lo formatearías aquí y crearías un nuevo prop, por ejemplo:
+              // formattedTimestamp: formatTimestampToLocal(notification.timestamp),
+              // y NotificationItem usaría `props.formattedTimestamp`
               onClick={handleNotificationClick}
             />
           ))}

@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
@@ -22,21 +21,26 @@ export async function POST(req: Request) {
       activityEvent = await prisma.activityEvent.create({
         data: {
           petId: pet.id,
-          timestamp: new Date(recordedAt),
+          timestamp: new Date(recordedAt), // Usa directamente el recordedAt del cliente
           activityType: 'movement',
         },
       });
 
+      // --- MODIFICACIÓN CLAVE AQUÍ ---
+      // Elimina la parte de formateo de la hora del mensaje
+      // Ahora, el mensaje solo dirá que se detectó actividad, sin la hora.
       activityNotification = {
         type: 'activity',
-        message: `¡${pet.name || 'Tu mascota'} ha estado activo! Evento de movimiento detectado a las ${new Date(recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}.`,
+        message: `¡${pet.name || 'Tu mascota'} ha estado activo! Evento de movimiento detectado.`,
         title: 'Smart Pet Care: ¡Actividad Detectada!',
       };
 
       await prisma.notification.create({
         data: {
           type: activityNotification.type,
-          message: activityNotification.message,
+          message: activityNotification.message, // Este mensaje ahora NO incluye la hora
+          // La columna 'timestamp' de la notificación debería guardar el `recordedAt` original
+          timestamp: new Date(recordedAt), 
         },
       });
 
