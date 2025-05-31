@@ -46,7 +46,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error("Error en GET /api/activity-stats:", error);
+    console.error("Error en GET /api/activity/stats:", error);
     return NextResponse.json({ error: "Error al obtener estadísticas de actividad" }, { status: 500 });
   }
 }
