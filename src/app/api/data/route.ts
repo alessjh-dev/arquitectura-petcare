@@ -1,4 +1,3 @@
-// src/app/api/data/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/push';
@@ -28,67 +27,60 @@ export async function POST(req: Request) {
     }
 
     const updateData: any = { recordedAt: new Date(recordedAt) };
-    const notificationsToSaveToDb = []; // Ahora solo para guardar en DB
-    let activityNotification: { type: string; message: string; title: string } | null = null; // Solo una para push
+    const notificationsToSaveToDb = []; 
+    let activityNotification: { type: string; message: string; title: string } | null = null; 
 
     if (name !== undefined) updateData.name = name;
     if (meals !== undefined) {
       updateData.meals = meals;
-      if (meals > pet.meals) {
+     /*  if (meals > pet.meals) {
         notificationsToSaveToDb.push({
           type: 'food',
           message: `¡${pet.name || 'Tu mascota'} ha comido ${meals} veces hoy!`,
           title: 'Smart Pet Care: ¡Comida Dispensada!', // Aunque no se enviará como push
         });
-      }
+      } */
     }
 
     if (water !== undefined) {
       updateData.water = water;
-      if (water < 20) {
+     /*  if (water < 20) {
         notificationsToSaveToDb.push({
           type: 'water',
           message: `¡ALERTA! El nivel de agua de ${pet.name || 'tu mascota'} está críticamente bajo (${water}%).`,
           title: 'Smart Pet Care: ¡Agua Baja!', // Aunque no se enviará como push
         });
-      }
+      } */
     }
 
     if (humidity !== undefined) updateData.humidity = humidity;
 
     if (temperature !== undefined) {
       updateData.temperature = temperature;
-      if (temperature > 30) {
+      /* if (temperature > 30) {
         notificationsToSaveToDb.push({
           type: 'alert',
           message: `¡ALERTA! La temperatura del ambiente es alta (${temperature}°C).`,
           title: 'Smart Pet Care: ¡Temperatura Elevada!', // Aunque no se enviará como push
         });
-      }
+      } */
     }
 
-    // --- Lógica de Actividad Modificada ---
     if (isActivityDetected === true) {
-      updateData.activity = pet.activity + 1; // Suma 1 a la actividad existente
-      // ¡Esta es la ÚNICA notificación que queremos enviar como push!
+      updateData.activity = pet.activity + 1; 
       activityNotification = {
         type: 'activity',
         message: `¡${pet.name || 'Tu mascota'} ha estado activa! Actividad total: ${updateData.activity}.`,
         title: 'Smart Pet Care: ¡Actividad Detectada!',
       };
-      notificationsToSaveToDb.push(activityNotification); // También la guardamos en DB
-    } else if (isActivityDetected === false) {
-      // Si recibes 'false', no hacemos nada con activity por ahora.
-      // updateData.activity = pet.activity; // Mantiene el valor actual si no hay actividad
+      notificationsToSaveToDb.push(activityNotification);
     }
-    // --- Fin de la Lógica de Actividad Modificada ---
 
     const updatedPet = await prisma.pet.update({
       where: { id: pet.id },
       data: updateData,
     });
 
-    // Guardar TODAS las notificaciones generadas en la base de datos
     for (const notif of notificationsToSaveToDb) {
       await prisma.notification.create({
         data: {
