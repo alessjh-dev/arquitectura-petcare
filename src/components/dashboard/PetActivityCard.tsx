@@ -1,4 +1,3 @@
-// src/components/dashboard/PetActivityCard.tsx
 'use client';
 
 import React from 'react';
@@ -7,8 +6,8 @@ import { Footprints, Sparkles } from 'lucide-react';
 
 interface PetActivityCardProps {
   petName?: string;
-  totalActivityEvents: number; // Esto será el total de eventos de HOY
-  lastActivityTimestamp?: string; // Esto será el último evento de HOY
+  totalActivityEvents: number;
+  lastActivityTimestamp?: string;
 }
 
 const PetActivityCard: React.FC<PetActivityCardProps> = ({
@@ -16,12 +15,12 @@ const PetActivityCard: React.FC<PetActivityCardProps> = ({
   totalActivityEvents,
   lastActivityTimestamp,
 }) => {
-  const lastSeenTime = totalActivityEvents > 0 && lastActivityTimestamp
+  const lastSeenTime = lastActivityTimestamp
     ? new Date(lastActivityTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-    : "No hay actividad hoy"; // Mensaje claro si no hay actividad HOY
+    : "Nunca";
 
   return (
-    <Card title={`Actividad de ${petName} Hoy`}> {/* Título específico para hoy */}
+    <Card title={`Actividad de ${petName}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">

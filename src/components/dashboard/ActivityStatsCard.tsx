@@ -8,11 +8,11 @@ import { BarChart2 } from 'lucide-react';
 interface DailyActivityData {
   date: string;
   count: number;
-  totalEvents: number; // Redundante para este componente, pero el tipo de API lo incluye
+  totalEvents: number;
 }
 
 interface ActivityStatsCardProps {
-  dailyActivity: DailyActivityData[]; // Recibe los datos para los 7 días
+  dailyActivity: DailyActivityData[];
 }
 
 const ActivityStatsCard: React.FC<ActivityStatsCardProps> = ({ dailyActivity }) => {
@@ -31,7 +31,7 @@ const ActivityStatsCard: React.FC<ActivityStatsCardProps> = ({ dailyActivity }) 
       <div className="space-y-4">
         <div className="flex items-center text-lg font-semibold text-primary">
           <BarChart2 size={24} className="mr-2" />
-          Tendencia de Actividad (Últimos 7 Días) {/* Título actualizado */}
+          Tendencia de Actividad
         </div>
         <div className="grid grid-cols-7 gap-2 text-center text-sm">
           {dailyActivity.map((day, index) => (
