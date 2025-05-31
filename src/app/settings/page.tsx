@@ -202,13 +202,7 @@ export default function SettingsPage() {
                 <Label htmlFor="petPhoto" className="text-lg font-medium">Foto de tu Mascota</Label>
                 <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary shadow-lg bg-muted flex items-center justify-center">
                   {petData.photo ? (
-                    <Image
-                      src={petData.photo}
-                      alt="Foto de la Mascota"
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      className="transition-transform duration-300 hover:scale-105"
-                    />
+                    <Image src={petData.photo} alt="Foto de la Mascota" fill style={{ objectFit: 'cover' }} className="transition-transform duration-300 hover:scale-105" />
                   ) : (
                     <Camera size={48} className="text-muted-foreground" />
                   )}

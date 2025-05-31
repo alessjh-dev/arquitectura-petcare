@@ -1,15 +1,18 @@
-// next.config.ts
-import withPWA from "next-pwa"; // Sintaxis de importación de ES Modules (ESM)
-
-const isDev = process.env.NODE_ENV === "development";
-
-const nextConfig = {
-  reactStrictMode: true,
-};
-
-export default withPWA({ // Sintaxis de exportación de ES Modules (ESM)
+// next.config.js
+const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: isDev,
-})(nextConfig);
+  disable: process.env.NODE_ENV === "development",
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: ['data:'], // <--- AÑADE ESTA LÍNEA
+    formats: ['image/avif', 'image/webp'], // Puedes mantener esto o ajustarlo
+  },
+};
+
+module.exports = withPWA(nextConfig);
