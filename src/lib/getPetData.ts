@@ -1,4 +1,3 @@
-// src/lib/getPetData.ts
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,13 +5,13 @@ import { useEffect, useState } from 'react';
 type Pet = {
   id: string;
   name: string;
-  photo: string | null; 
+  photo: string | null;
   recordedAt: string;
   createdAt: string;
   updatedAt: string;
 };
 
-export function usePetData(pollInterval = 5000) {
+export function usePetData() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,10 +35,7 @@ export function usePetData(pollInterval = 5000) {
   };
 
   useEffect(() => {
-    fetchPet();
-    const interval = setInterval(fetchPet, pollInterval);
-    return () => clearInterval(interval);
-  }, [pollInterval]);
-
+    fetchPet(); 
+  }, []); 
   return { pet, error };
 }

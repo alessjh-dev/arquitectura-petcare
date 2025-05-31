@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
       activityNotification = {
         type: 'activity',
-        message: `¡${pet.name || 'Tu mascota'} ha estado activa! Evento de movimiento detectado a las ${new Date(recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}.`,
+        message: `¡${pet.name || 'Tu mascota'} ha estado activo! Evento de movimiento detectado a las ${new Date(recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}.`,
         title: 'Smart Pet Care: ¡Actividad Detectada!',
       };
 

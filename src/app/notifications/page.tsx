@@ -1,4 +1,4 @@
-// src/app/notifications/page.tsx
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -11,38 +11,34 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para obtener las notificaciones desde tu API
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/notifications'); // Llama a tu nueva API
+      const res = await fetch('/api/notifications');
       if (!res.ok) {
         throw new Error('Error al cargar notificaciones');
       }
       const data: NotificationItemProps[] = await res.json();
-      // Formatea la fecha para mostrarla de forma legible
       const formattedData = data.map(notif => ({
         ...notif,
-        timestamp: new Date(notif.timestamp).toLocaleString(), // Ejemplo: "5/27/2025, 8:00:00 PM"
+        timestamp: new Date(notif.timestamp).toLocaleString(),
       }));
       setNotifications(formattedData);
     } catch (err: any) {
       setError(err.message);
-      console.error('Error al obtener notificaciones:', err);
+      console.error('Error fetching notifications:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Carga las notificaciones al iniciar y opcionalmente cada cierto tiempo
   useEffect(() => {
-    fetchNotifications();
-    // const interval = setInterval(fetchNotifications, 15000); // Actualizar cada 15 segundos
-    // return () => clearInterval(interval);
+    fetchNotifications(); 
+    const interval = setInterval(fetchNotifications, 3000);
+    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Maneja el clic en una notificación para marcarla como leída
   const handleNotificationClick = async (id: string) => {
     try {
       const res = await fetch('/api/notifications', {
@@ -51,19 +47,16 @@ export default function NotificationsPage() {
         body: JSON.stringify({ id, isRead: true }),
       });
       if (!res.ok) throw new Error('Error al marcar como leída');
-
-      // Actualiza el estado local para reflejar el cambio en la UI
       setNotifications(prevNotifications =>
         prevNotifications.map(notif =>
           notif.id === id ? { ...notif, isRead: true } : notif
         )
       );
     } catch (err) {
-      console.error('Error al marcar notificación como leída:', err);
+      console.error('Error marking notification as read:', err);
     }
   };
 
-  // Maneja el marcar todas las notificaciones como leídas
   const handleMarkAllAsRead = async () => {
     try {
       const unreadNotificationIds = notifications
@@ -77,14 +70,13 @@ export default function NotificationsPage() {
           body: JSON.stringify({ ids: unreadNotificationIds, isRead: true }),
         });
         if (!res.ok) throw new Error('Error al marcar todas como leídas');
-        fetchNotifications(); // Recarga para asegurar la consistencia
+        fetchNotifications();
       }
     } catch (err) {
       console.error('Error al marcar todas como leídas:', err);
     }
   };
 
-  // Maneja el borrar todas las notificaciones del historial
   const handleClearAll = async () => {
     if (!confirm('¿Estás seguro de que quieres borrar todo el historial de notificaciones? Esta acción es irreversible.')) {
       return;
@@ -94,7 +86,7 @@ export default function NotificationsPage() {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Error al borrar el historial');
-      setNotifications([]); // Limpia el estado local de inmediato
+      setNotifications([]);
     } catch (err) {
       console.error('Error al borrar el historial:', err);
       alert('Hubo un error al borrar las notificaciones.');
