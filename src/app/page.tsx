@@ -16,7 +16,7 @@ interface ActivityStats {
 }
 
 export default function HomePageClient() {
-  const { pet, error: petError } = usePetData(); // Ya no necesita pollInterval
+  const { pet, error: petError } = usePetData();
   const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -44,8 +44,6 @@ export default function HomePageClient() {
 
   useEffect(() => {
     fetchActivityStats();
-    const interval = setInterval(fetchActivityStats, 10000); // Polling para las stats
-    return () => clearInterval(interval);
   }, []);
 
   if (petError || statsError) {
@@ -58,7 +56,6 @@ export default function HomePageClient() {
 
   return (
     <div className="container mx-auto p-4 pb-20 grid auto-rows-auto gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-      {/* 1. Tarjeta de Información de la Mascota */}
       <PetInfoCard
         petName={pet.name}
         petPhoto={pet.photo}
@@ -67,19 +64,16 @@ export default function HomePageClient() {
         breed={pet.breed}
       />
 
-      {/* 2. Tarjeta principal de actividad */}
       <PetActivityCard
         petName={activityStats?.petName || pet.name}
         totalActivityEvents={activityStats?.totalActivityEvents ?? 0}
         lastActivityTimestamp={activityStats?.lastActivityTimestamp?.toString()}
       />
 
-      {/* 3. Tarjeta de Estadísticas Diarias */}
       {activityStats && activityStats.dailyActivity && (
         <ActivityStatsCard dailyActivity={activityStats.dailyActivity} />
       )}
 
-      {/* 4. Tarjeta de Total de Actividad (Rediseñada) */}
       {activityStats && (
         <TotalActivityCard totalEvents={activityStats.totalActivityEvents} />
       )}

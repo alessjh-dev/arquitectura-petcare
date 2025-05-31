@@ -1,18 +1,22 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import NotificationItem, { NotificationItemProps } from '@/components/notifications/NotificationItem';
 import { Button } from '@/components/ui/Button';
-import { Bell } from 'lucide-react';
+import { Bell, Loader2 } from 'lucide-react'; // Importamos Loader2 para un spinner
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItemProps[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 'initialLoad' se usa para el primer renderizado, y 'isUpdating' para las actualizaciones de polling.
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // Nuevo estado para indicar si se está actualizando por polling
   const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
-    setLoading(true);
+    // Si no es la carga inicial, mostramos un spinner más discreto
+    if (!initialLoad) {
+      setIsUpdating(true);
+    }
     setError(null);
     try {
       const res = await fetch('/api/notifications');
@@ -29,14 +33,15 @@ export default function NotificationsPage() {
       setError(err.message);
       console.error('Error fetching notifications:', err);
     } finally {
-      setLoading(false);
+      setInitialLoad(false); // La carga inicial ha terminado
+      setIsUpdating(false); // La actualización ha terminado
     }
-  }, []);
+  }, [initialLoad]); // Dependencia initialLoad para controlar el flujo
 
   useEffect(() => {
-    fetchNotifications(); 
-    const interval = setInterval(fetchNotifications, 3000);
-    return () => clearInterval(interval);
+    fetchNotifications(); // Carga inicial al montar
+    const interval = setInterval(fetchNotifications, 3000); // Polling cada 3 segundos
+    return () => clearInterval(interval); // Limpia el intervalo al desmontar
   }, [fetchNotifications]);
 
   const handleNotificationClick = async (id: string) => {
@@ -70,7 +75,7 @@ export default function NotificationsPage() {
           body: JSON.stringify({ ids: unreadNotificationIds, isRead: true }),
         });
         if (!res.ok) throw new Error('Error al marcar todas como leídas');
-        fetchNotifications();
+        fetchNotifications(); // Refresca las notificaciones después de marcar
       }
     } catch (err) {
       console.error('Error al marcar todas como leídas:', err);
@@ -93,10 +98,12 @@ export default function NotificationsPage() {
     }
   };
 
-  if (loading) {
+  // Mostrar un mensaje de carga inicial solo al principio
+  if (initialLoad) {
     return <p className="text-center py-10">Cargando notificaciones...</p>;
   }
 
+  // Mostrar error si lo hay
   if (error) {
     return <p className="text-center py-10 text-red-500">Error: {error}</p>;
   }
@@ -109,6 +116,10 @@ export default function NotificationsPage() {
           <Button variant="outline" size="sm" onClick={handleMarkAllAsRead} className="mb-3">
             Marcar todas como leídas
           </Button>
+        )}
+        {/* Indicador de actualización sutil */}
+        {isUpdating && (
+          <Loader2 className="animate-spin text-muted-foreground ml-4 mb-3" size={20} />
         )}
       </div>
 
