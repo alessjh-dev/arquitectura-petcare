@@ -3,24 +3,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NotificationItem, { NotificationItemProps } from '@/components/notifications/NotificationItem';
 import { Button } from '@/components/ui/Button';
-import { Bell, Loader2, Info, CheckCircle, AlertTriangle } from 'lucide-react'; // Añadimos más iconos
-
-// Nuevo: Tipo para el banner de notificación temporal
-interface TemporaryBannerNotification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  message: string;
-}
+import { Bell, Loader2 } from 'lucide-react'; // Quitamos iconos de banner
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItemProps[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [temporaryBanner, setTemporaryBanner] = useState<TemporaryBannerNotification | null>(null);
 
   const fetchNotifications = useCallback(async () => {
-    // Si no es la carga inicial, mostramos un spinner más discreto
     if (!initialLoad) {
       setIsUpdating(true);
     }
@@ -31,37 +22,6 @@ export default function NotificationsPage() {
         throw new Error('Error al cargar notificaciones');
       }
       const data: NotificationItemProps[] = await res.json();
-
-      // Detectar nuevas notificaciones para el banner temporal
-      const newNotifications = data.filter(
-        (newNotif) => !notifications.some((existingNotif) => existingNotif.id === newNotif.id)
-      );
-
-      // Si hay nuevas notificaciones y no es la carga inicial
-      if (newNotifications.length > 0 && !initialLoad) {
-        // Tomar la primera nueva notificación y mostrarla en el banner
-        const latestNew = newNotifications[0];
-        let bannerType: 'info' | 'success' | 'warning' | 'error' = 'info';
-        switch (latestNew.type) {
-          case 'activity':
-            bannerType = 'success'; // Actividad es positiva
-            break;
-          case 'alert':
-            bannerType = 'warning'; // Alertas son advertencias
-            break;
-          // Puedes añadir más casos según tus NotificationType
-          default:
-            bannerType = 'info';
-        }
-        setTemporaryBanner({
-          id: latestNew.id,
-          type: bannerType,
-          message: latestNew.message,
-        });
-        // Desaparecer el banner después de unos segundos
-        setTimeout(() => setTemporaryBanner(null), 5000);
-      }
-
       const formattedData = data.map(notif => ({
         ...notif,
         timestamp: new Date(notif.timestamp).toLocaleString(),
@@ -74,10 +34,10 @@ export default function NotificationsPage() {
       setInitialLoad(false);
       setIsUpdating(false);
     }
-  }, [initialLoad, notifications]); // Añadimos 'notifications' a las dependencias para detectar nuevas
+  }, [initialLoad]); // Dependencia initialLoad para controlar el flujo
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(); // Carga inicial
     const interval = setInterval(fetchNotifications, 3000); // Polling cada 3 segundos
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -136,27 +96,6 @@ export default function NotificationsPage() {
     }
   };
 
-  // Helper para el icono del banner
-  const getBannerIcon = (type: TemporaryBannerNotification['type']) => {
-    switch (type) {
-      case 'success': return <CheckCircle size={20} className="mr-2" />;
-      case 'warning': return <AlertTriangle size={20} className="mr-2" />;
-      case 'error': return <AlertTriangle size={20} className="mr-2" />; // O un icono de error diferente
-      default: return <Info size={20} className="mr-2" />;
-    }
-  };
-
-  // Helper para el color del banner
-  const getBannerColorClass = (type: TemporaryBannerNotification['type']) => {
-    switch (type) {
-      case 'success': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'error': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    }
-  };
-
-
   if (initialLoad) {
     return <p className="text-center py-10">Cargando notificaciones...</p>;
   }
@@ -167,13 +106,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="container mx-auto p-4 pb-20">
-      {/* Banner de notificación temporal */}
-      {temporaryBanner && (
-        <div className={`fixed top-16 left-1/2 -translate-x-1/2 w-11/12 max-w-sm p-3 rounded-lg shadow-lg flex items-center z-50 transition-all duration-300 ${getBannerColorClass(temporaryBanner.type)}`}>
-          {getBannerIcon(temporaryBanner.type)}
-          <p className="text-sm font-medium">{temporaryBanner.message}</p>
-        </div>
-      )}
+      {/* El banner temporal ya NO se renderiza aquí, sino en layout.tsx */}
 
       <div className="flex flex-wrap items-center mb-6">
         <h1 className="text-2xl font-bold mr-4 mb-3">Notificaciones</h1>
