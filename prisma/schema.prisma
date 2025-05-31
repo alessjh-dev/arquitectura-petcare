@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,16 +10,22 @@ datasource db {
 }
 
 model Pet {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  meals       Int
-  water       Float
-  humidity    Float
-  temperature Float  
-  activity    Float
-  recordedAt  DateTime 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String    @unique
+  photo       Bytes?    // <-- NUEVO CAMPO: Almacenará la imagen como Bytes (BYTEA en PostgreSQL)
+  recordedAt  DateTime  // Última vez que se registró CUALQUIER dato de la mascota (por /api/activity)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  activityEvents ActivityEvent[] // Relación: una mascota tiene muchos eventos de actividad
+}
+
+model ActivityEvent {
+  id           String    @id @default(cuid())
+  petId        String    // ID de la mascota a la que pertenece el evento
+  pet          Pet       @relation(fields: [petId], references: [id]) // Relación con la mascota
+  timestamp    DateTime  @default(now()) // Momento en que ocurrió la actividad
+  activityType String    // Por ejemplo: 'movement' (ideal para un PIR).
 }
 
 model Notification {
@@ -28,13 +36,10 @@ model Notification {
   isRead    Boolean  @default(false)
 }
 
-// prisma/schema.prisma
 model PushSubscription {
   id             Int       @id @default(autoincrement())
   endpoint       String    @unique
   keys           Json
-  expirationTime DateTime? // ¡AÑADE ESTA LÍNEA! Es opcional (?), por si viene null
+  expirationTime DateTime?
   createdAt      DateTime  @default(now())
 }
-
-

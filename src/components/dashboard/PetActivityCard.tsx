@@ -6,18 +6,18 @@ import { Footprints, Sparkles } from 'lucide-react';
 
 interface PetActivityCardProps {
   petName?: string;
-  activity: number;
-  lastSeen?: string; 
+  totalActivityEvents: number;
+  lastActivityTimestamp?: string;
 }
 
 const PetActivityCard: React.FC<PetActivityCardProps> = ({
   petName = "Mascota",
-  activity,
-  lastSeen,
+  totalActivityEvents,
+  lastActivityTimestamp,
 }) => {
-  const lastSeenTime = lastSeen 
-  ? new Date(lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) 
-  : "Desconocido";
+  const lastSeenTime = lastActivityTimestamp
+    ? new Date(lastActivityTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    : "Nunca";
 
   return (
     <Card title={`Actividad de ${petName}`}>
@@ -26,14 +26,14 @@ const PetActivityCard: React.FC<PetActivityCardProps> = ({
           <div className="flex items-center">
             <Footprints size={32} className="mr-3 text-orange-500 animate-pulse" />
             <div>
-              <p className="text-sm text-muted-foreground">Nivel de Actividad</p>
-              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{activity}</p>
+              <p className="text-sm text-muted-foreground">Eventos Detectados</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{totalActivityEvents}</p>
             </div>
           </div>
           <Sparkles size={28} className="text-yellow-400" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Última vez visto/a</p>
+          <p className="text-sm text-muted-foreground">Último Evento</p>
           <p className="text-xl font-semibold">{lastSeenTime}</p>
         </div>
       </div>

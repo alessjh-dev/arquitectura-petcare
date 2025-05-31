@@ -6,12 +6,8 @@ import { useEffect, useState } from 'react';
 type Pet = {
   id: string;
   name: string;
-  meals: number;
-  water: number;
-  humidity: number;
-  temperature: number;
-  activity: number;
-  recordedAt: string; // Puede ser Date si lo parseas
+  photo: string | null; 
+  recordedAt: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -24,14 +20,14 @@ export function usePetData(pollInterval = 5000) {
     try {
       const res = await fetch('/api/data');
       if (!res.ok) {
-        if (res.status === 404) { // Si no hay mascota registrada
+        if (res.status === 404) {
           setPet(null);
           setError("No hay mascota registrada. Por favor, configura una en Ajustes.");
           return;
         }
         throw new Error('Error al obtener datos de la mascota');
       }
-      const data = await res.json();
+      const data: Pet = await res.json();
       setPet(data);
     } catch (e: any) {
       setError(e.message);
@@ -40,9 +36,9 @@ export function usePetData(pollInterval = 5000) {
   };
 
   useEffect(() => {
-    fetchPet(); // Cargar datos al montar el componente
-    const interval = setInterval(fetchPet, pollInterval); // Recargar datos periódicamente
-    return () => clearInterval(interval); // Limpiar el intervalo al desmontar
+    fetchPet();
+    const interval = setInterval(fetchPet, pollInterval);
+    return () => clearInterval(interval);
   }, [pollInterval]);
 
   return { pet, error };
