@@ -4,15 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { Save, Pencil, Camera, Trash2, Calendar, Scale, PawPrint } from 'lucide-react'; // Nuevos iconos
+import { Save, Pencil, Camera, Trash2, Calendar, Scale, PawPrint } from 'lucide-react';
 import Image from 'next/image';
 
-// Tipo de la mascota con los nuevos campos
 interface PetData {
-  id?: string; // Puede no tener ID si es nueva
+  id?: string;
   name: string;
-  photo: string | null; // Base64 string
-  birthDate: string | null; // 'YYYY-MM-DD'
+  photo: string | null; // Base64 string (con prefijo data:image/...)
+  birthDate: string | null;
   weight: number | null;
   breed: string | null;
   recordedAt?: string;
@@ -42,7 +41,8 @@ export default function SettingsPage() {
         const res = await fetch('/api/data');
         if (!res.ok) {
           if (res.status === 404) {
-            setError(null); // No es un error, solo que no hay mascota
+            setError(null);
+            setPetData({ name: '', photo: null, birthDate: null, weight: null, breed: null }); // Resetear si no hay mascota
             return;
           }
           throw new Error('Error al obtener datos de la mascota');
@@ -50,11 +50,11 @@ export default function SettingsPage() {
         const data: PetData = await res.json();
         setPetData({
           name: data?.name ?? '',
-          photo: data?.photo ?? null,
+          photo: data?.photo ?? null, // Ya viene con el prefijo base64 del backend
           birthDate: data?.birthDate ?? null,
           weight: data?.weight ?? null,
           breed: data?.breed ?? null,
-          id: data.id, // Guardar el ID si existe
+          id: data.id,
         });
       } catch (err) {
         setError((err as Error).message);
@@ -79,8 +79,16 @@ export default function SettingsPage() {
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validación básica del tamaño del archivo (ej. 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("El archivo es demasiado grande. Por favor, selecciona una imagen de menos de 5MB.");
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
+        // reader.result ya es una Data URL (ej. data:image/png;base64,...)
         setPetData(prev => ({ ...prev, photo: reader.result as string }));
       };
       reader.readAsDataURL(file);
@@ -90,7 +98,7 @@ export default function SettingsPage() {
   const handleRemovePhoto = () => {
     setPetData(prev => ({ ...prev, photo: null }));
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''; // Limpia el input de archivo
     }
   };
 
@@ -101,12 +109,9 @@ export default function SettingsPage() {
     }
     try {
       setLoading(true);
-      // La API ya espera la cadena base64 con o sin prefijo, la procesa internamente
-      // `photo` puede ser null, la cadena base64 completa, o la cadena base64 sin prefijo.
-      // La API la limpiará si es necesario.
       const dataToSend = {
         name: petData.name,
-        photo: petData.photo,
+        photo: petData.photo, // petData.photo ya es un string base64 con el prefijo o null
         birthDate: petData.birthDate,
         weight: petData.weight,
         breed: petData.breed,
@@ -126,7 +131,7 @@ export default function SettingsPage() {
       const updatedData: PetData = await res.json();
       setPetData({
         name: updatedData.name,
-        photo: updatedData.photo,
+        photo: updatedData.photo, // Ya viene base64 con prefijo
         birthDate: updatedData.birthDate,
         weight: updatedData.weight,
         breed: updatedData.breed,
@@ -159,7 +164,6 @@ export default function SettingsPage() {
             <p className="text-red-600">Error: {error}</p>
           ) : (
             <div className="space-y-4">
-              {/* Botones de Editar/Guardar */}
               <div className="flex justify-end gap-2">
                 {!isEditing ? (
                   <Button
@@ -197,7 +201,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Sección de Foto de la Mascota */}
               <div className="flex flex-col items-center gap-4 p-4 border rounded-lg bg-card">
                 <Label htmlFor="petPhoto" className="text-lg font-medium">Foto de tu Mascota</Label>
                 <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary shadow-lg bg-muted flex items-center justify-center">
@@ -210,7 +213,7 @@ export default function SettingsPage() {
                 <Input
                   id="petPhoto"
                   type="file"
-                  accept="image/jpeg,image/png" // Aceptar solo JPG/PNG
+                  accept="image/jpeg,image/png"
                   ref={fileInputRef}
                   onChange={handlePhotoChange}
                   className="w-full max-w-xs cursor-pointer"
@@ -229,7 +232,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Campos de Información de la Mascota */}
               <div className="space-y-4 p-4 border rounded-lg bg-card">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="flex items-center gap-2 text-lg font-medium">
@@ -251,7 +253,7 @@ export default function SettingsPage() {
                   </Label>
                   <Input
                     id="birthDate"
-                    type="date" // Input tipo fecha
+                    type="date"
                     value={petData.birthDate || ''}
                     onChange={handleInputChange}
                     disabled={!isEditing || loading}
@@ -265,8 +267,8 @@ export default function SettingsPage() {
                   </Label>
                   <Input
                     id="weight"
-                    type="number" // Input tipo número
-                    step="0.1" // Permite decimales
+                    type="number"
+                    step="0.1"
                     value={petData.weight ?? ''}
                     onChange={handleNumberInputChange}
                     disabled={!isEditing || loading}
