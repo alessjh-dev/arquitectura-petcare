@@ -1,13 +1,11 @@
 // next.config.js
-// Cambiamos require a import
-import withPWAInit from "next-pwa";
-
-// Inicializamos withPWA correctamente para usar con import
-const withPWA = withPWAInit({
+// Usamos 'require' en lugar de 'import' para compatibilidad con CommonJS
+const withPWA = require('next-pwa')({
   dest: "public",
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  swSrc: './src/sw.ts', // Sigue apuntando a tu Service Worker de TypeScript
 });
 
 /** @type {import('next').NextConfig} */
@@ -15,9 +13,9 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     domains: ['data:'],
-    formats: ['image/avif', 'image/webp'],
+    formats: ['image/avif', 'image/webp'], // Esto se mantiene, pero TypeScript no lo validará aquí
   },
 };
 
-// Cambiamos module.exports a export default
-export default withPWA(nextConfig);
+// Usamos 'module.exports' en lugar de 'export default'
+module.exports = withPWA(nextConfig);

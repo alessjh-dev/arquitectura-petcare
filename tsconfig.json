@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+      "lib": [
+      "dom",           // Para APIs del DOM (document, window)
+      "dom.iterable",   // Para tipos iterables del DOM (NodeList)
+      "esnext",         // Para las últimas características de JS (Promise, async/await)
+      "WebWorker"       // <--- ESTO ES CRÍTICO para los tipos de Service Worker (self, PushEvent, NotificationEvent, clients)
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -22,6 +27,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next.config.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next.config.js" // <-- Asegúrate de que esto sea 'next.config.ts' si tu archivo es .ts
+, "public/sw.js"  ],
   "exclude": ["node_modules"]
 }

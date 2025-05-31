@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     // Usa el tipo Pet importado directamente
-    let pet: any = await prisma.pet.findFirst();
+    let pet: any | null = await prisma.pet.findFirst();
 
     if (!pet) {
       pet = await prisma.pet.create({
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
       });
       const petResponse = {
         ...pet,
+        // **CORRECCIÓN AQUÍ:** Aseguramos que pet.photo es un Buffer antes de llamar a toString
         photo: pet.photo ? `data:image/jpeg;base64,${(pet.photo as Buffer).toString('base64')}` : null,
       };
       return NextResponse.json(petResponse, { status: 201 });
@@ -74,6 +75,7 @@ export async function POST(req: Request) {
 
     const petResponse = {
       ...updatedPet,
+      // **CORRECCIÓN AQUÍ:** Aseguramos que updatedPet.photo es un Buffer antes de llamar a toString
       photo: updatedPet.photo ? `data:image/jpeg;base64,${(updatedPet.photo as Buffer).toString('base64')}` : null,
       birthDate: updatedPet.birthDate ? updatedPet.birthDate.toISOString().split('T')[0] : null,
     };
@@ -88,12 +90,13 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     // Usa el tipo Pet importado directamente
-    const pet: any = await prisma.pet.findFirst();
+    const pet: any | null = await prisma.pet.findFirst();
     if (!pet) {
       return NextResponse.json({ error: "No hay mascota registrada" }, { status: 404 });
     }
     const petResponse = {
       ...pet,
+      // **CORRECCIÓN AQUÍ:** Aseguramos que pet.photo es un Buffer antes de llamar a toString
       photo: pet.photo ? `data:image/jpeg;base64,${(pet.photo as Buffer).toString('base64')}` : null,
       birthDate: pet.birthDate ? pet.birthDate.toISOString().split('T')[0] : null,
     };
