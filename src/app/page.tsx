@@ -25,7 +25,7 @@ export default function HomePageClient() {
     setLoadingStats(true);
     setStatsError(null);
     try {
-      const res = await fetch('/api/activity-stats');
+      const res = await fetch('/api/activity/stats');
       if (!res.ok) {
         if (res.status === 404) {
           throw new Error('No hay datos de mascota registrados para las estadísticas. Por favor, asegúrate de que haya una mascota y eventos de actividad.');
