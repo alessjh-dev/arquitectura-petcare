@@ -46,11 +46,6 @@ export async function POST(req: Request) {
       });
     }
 
-    if (activityNotification) {
-      const subscriptions = await prisma.pushSubscription.findMany();
-      const payload = JSON.stringify({ title: activityNotification.title, body: activityNotification.message });
-    }
-
     return NextResponse.json({ message: "Actividad registrada", event: activityEvent, petName: pet.name });
 
   } catch (error) {
