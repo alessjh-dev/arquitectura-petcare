@@ -24,7 +24,7 @@ export async function GET() {
       const start = startOfDay(day);
       const end = endOfDay(day);
 
-      const eventsToday = allActivityEvents.filter(event =>
+      const eventsToday = allActivityEvents.filter((event:any) =>
         event.timestamp >= start && event.timestamp <= end
       );
 
